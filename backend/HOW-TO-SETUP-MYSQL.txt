@@ -1,0 +1,34 @@
+MYSQL WORKBENCH SETUP (do this first)
+======================================
+
+STEP 1: Open MySQL Workbench and connect to Local instance (click your connection).
+
+STEP 2: Open the SQL file
+        File -> Open SQL Script
+        Select: backend/database/schema.sql
+        Click Execute (lightning bolt icon).
+        This creates database "registration_db" and table "registrations".
+
+STEP 3: Set your MySQL password in backend/config.js
+        password: 'your_mysql_password'
+
+STEP 4: Install backend packages
+        cd backend
+        npm install
+
+STEP 5: Start backend
+        node server.js
+
+STEP 6: Start frontend (new terminal)
+        cd frontend
+        npm run dev
+
+STEP 7: Open browser -> http://localhost:3000
+
+TO SEE DATA IN MYSQL WORKBENCH
+==============================
+In Workbench, run this query:
+
+SELECT * FROM registrations;
+
+You will see every form submission in a table.
