@@ -9,8 +9,23 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-// Allow React app to talk to this server
-app.use(cors({ origin: [FRONTEND_URL, 'http://localhost:3000'] }));
+// Allow React app (localhost + Vercel) to talk to this server
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (
+        !origin ||
+        origin.includes('localhost') ||
+        origin.endsWith('.vercel.app') ||
+        origin === FRONTEND_URL
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
+  })
+);
 
 // Read JSON data sent from the form
 app.use(express.json());
@@ -101,20 +116,41 @@ app.get('/api/registrations', async (req, res) => {
 });
 
 // --- Start the server (only after MySQL connection works) ---
+async function createTableIfNeeded() {
+  const sql = `
+    CREATE TABLE IF NOT EXISTS registrations (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      first_name VARCHAR(100) NOT NULL,
+      last_name VARCHAR(100) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone_number VARCHAR(20) NOT NULL,
+      date_of_birth DATE,
+      gender VARCHAR(20),
+      address TEXT,
+      city VARCHAR(100),
+      state VARCHAR(100),
+      country VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+  await db.execute(sql);
+}
+
 async function startServer() {
   if (!require('./config').password) {
-    console.error('\nERROR: MySQL password is empty in config.js');
-    console.error('Open backend/config.js and set your MySQL password, then save the file.\n');
+    console.error('\nERROR: MySQL password is empty.');
+    console.error('Set DB_PASSWORD in backend/.env (local) or Render env vars (online).\n');
     process.exit(1);
   }
 
   try {
     await db.execute('SELECT 1');
-    console.log('Connected to MySQL database: registration_db');
+    await createTableIfNeeded();
+    console.log('Connected to MySQL database:', require('./config').database);
   } catch (error) {
     console.error('\nERROR: Cannot connect to MySQL.');
     console.error(error.message);
-    console.error('Check: 1) MySQL Server is running  2) password in config.js is correct  3) schema.sql was executed in Workbench\n');
+    console.error('Check DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE in environment variables.\n');
     process.exit(1);
   }
 
